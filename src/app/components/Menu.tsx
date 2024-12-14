@@ -1,13 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchWeeklyMenu } from "../contentfulClient"; 
+import { fetchWeeklyMenu } from "../contentfulClient";
 
 interface MenuItem {
-  dan: string;
-  datum: string;
-  jedi: string[];
+  dan: string;  
+  datum: string; 
+  jedi: string[]; 
 }
+
+const predefinedDays = [
+  { dan: "Ponedeljek", datum: "" },
+  { dan: "Torek", datum: "" },
+  { dan: "Sreda", datum: "" },
+  { dan: "Četrtek", datum: "" },
+  { dan: "Petek", datum: "" },
+];
+
+const danasnjiDatum = "2024-12-13"
 
 const Menu = () => {
   const [tedenskiMeni, setTedenskiMeni] = useState<MenuItem[]>([]);
@@ -16,12 +26,22 @@ const Menu = () => {
 
   useEffect(() => {
     const getMenu = async () => {
-        console.log("in")
+      console.log("Fetching weekly menu...");
       try {
-        const data = await fetchWeeklyMenu();
-        setTedenskiMeni(data)
+        const data: MenuItem[] = await fetchWeeklyMenu();
+        
+        console.log(data)
+        // Sort and align data with predefined days
+        const sortedMenu = predefinedDays.map((day, index) => {
+          const matchedDay = data.find(
+            (item) => item.dan === predefinedDays[index].dan
+          );
+          return matchedDay || { ...day, jedi: [] }; 
+        });
+
+        setTedenskiMeni(sortedMenu);
       } catch (error) {
-        setError(`Failed to load menu. Please try again later. Error: ${error} `);
+        setError(`Failed to load menu. Please try again later. Error: ${error}`);
       } finally {
         setLoading(false);
       }
@@ -41,27 +61,48 @@ const Menu = () => {
           <table className="table-auto w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="px-4 py-2 text-gray-800">Dan</th>
-                <th className="px-4 py-2 text-gray-800">Datum</th>
-                <th className="px-4 py-2 text-gray-800">Ponudba</th>
+                {tedenskiMeni.map((day, index) => (
+                  <th key={index} className="px-4 py-2">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="font-medium">{day.dan}</span>
+                      {day.datum && (
+                        <span className="text-sm text-gray-600" >
+                          {new Intl.DateTimeFormat('en-GB').format(new Date(day.datum))}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {tedenskiMeni.map((dan, index) => (
-                <tr key={index} className="border-b">
-                  <td className="px-4 py-2 text-gray-600 font-semibold">{dan.dan}</td>
-                  <td className="px-4 py-2 text-gray-600">{new Date(dan.datum).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 text-gray-600">
-                    <ul className="list-disc ml-5">
-                      {dan.jedi.map((jed, idx) => (
-                        <li key={idx}>{jed}</li>
+              <tr>
+                {tedenskiMeni.map((day, index) => (
+                  <td key={index} className={`border px-4 py-2 ${day.datum === danasnjiDatum ? 'bg-gray-50 ' : 'bg-white text-black'}`}>
+                    <ul>
+                      {day.jedi.map((jedi, i) => (
+                        <li key={i}>{jedi}</li>
                       ))}
                     </ul>
                   </td>
-                </tr>
-              ))}
+                ))}
+              </tr>
             </tbody>
           </table>
+        </div>
+        <div >
+          <h3>Cenik:</h3>
+          <ul className="flex flex-col items-start">
+            <li>
+              Glavna jed <b>7,20e (z DDV)</b>
+            </li>
+            <li>
+                Glavna jed + juha / solata / sladica <b>8,50e (z DDV)</b>
+            </li>
+            <li>
+                Glavna jed + juha + solata + sladoca <b>10,90e (z DDV)</b>
+            </li>
+          </ul>
         </div>
       </section>
     </div>
